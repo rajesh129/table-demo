@@ -11,94 +11,127 @@ export default class Main extends React.Component {
         this.onEdit = this.onEdit.bind(this);
         this.state = {
             inputValue: {},
-            columns: []
+            columns: [],
+            editedRow: null
         }
     }
-    handleChange(event) {
+    handleChange(event) { //On change event for Input controls
         let inputValue = {...this.state.inputValue}; 
         inputValue[event.target.id] = event.target.value;
-        this.setState({inputValue});
+        this.setState({inputValue}); //Store each input values in state
     }
-    onEdit(event) {
+    onEdit(event) { //Event for editing row data
         let elem = document.querySelector("#" + event.target.id); 
-        let rowValue = elem.dataset.rowValue.split(",");
+        let rowValue = elem.dataset.rowValue.split(","); //Change selected row values into array
+        let editedRow = parseInt(elem.dataset.rowId); //Get selected row ID
+        const {formFields} = this.props;
+        /* Restore state input value from selected Row data */
         let inputValue = {};
-        inputValue.firstName = rowValue[0];
-        inputValue.lastName = rowValue[1];
-        inputValue.email = rowValue[2];
-        this.setState({inputValue});
+        let restoreValue = rowValue.map((k,i) => {
+            inputValue[formFields[i].id] = rowValue[i];
+        });
+        
+        this.setState({inputValue, editedRow: editedRow});
     }
-    onClick() {
+    onClick() { //On click event for Button control
+        const {
+            editedRow,
+            inputValue
+        } = this.state; //Destructuring of state
+        const {formFields} = this.props; //Destructuring of props
+        /* Render Column based input provided starts */
         let columns = this.state.columns; 
-        columns.push(
-            <tr id={"row_" + columns.length} key={"row_" + columns.length}>
-                <td>{columns.length + 1 + "."}</td>
-                <td>{this.state.inputValue.firstName != undefined ? this.state.inputValue.firstName : "--"}</td>
-                <td>{this.state.inputValue.lastName != undefined ? this.state.inputValue.lastName : "--"}</td>
-                <td>{this.state.inputValue.email != undefined ? this.state.inputValue.email : "--"}</td>
-                <td>
-                    <a 
-                        href="#" 
-                        onClick={this.onEdit}
-                        id={"row_edit_" + columns.length} 
-                        data-row-value={[this.state.inputValue.firstName, this.state.inputValue.lastName, this.state.inputValue.email]}
-                    >
-                        {"Edit"}
-                    </a>
-                </td>
-            </tr>
-        );
-        this.setState({columns: columns, inputValue: {}})
+        let storeColumnData = [];
+        const bindRows = (index) => { //Common method for binding rows dynamically
+            let list = formFields.map((k,i) => {
+                let bindColumns = [];                
+                if(formFields[i].showColumn) {
+                    let field = formFields[i].placeholder;
+                    bindColumns.push(
+                        <td key={i}>{inputValue[formFields[i].id] != undefined ? inputValue[formFields[i].id] : "--"}</td>
+                    )
+                }
+                storeColumnData.push(inputValue[formFields[i].id]);
+                return bindColumns;
+            });
+            return (
+                <tr id={"row_" + index} key={"row_" + index}>
+                    <td>{index + 1 + "."}</td>
+                    {list}
+                    <td>
+                        <a 
+                            href="#" 
+                            onClick={this.onEdit}
+                            id={"row_edit_" + index} 
+                            data-row-value={storeColumnData}
+                            data-row-id={index}
+                        >
+                            {"Edit"}
+                        </a>
+                    </td>
+                </tr>
+            )
+        }
+        if(editedRow != null) {
+            columns[editedRow] = bindRows(editedRow); //Rerender edited rows
+        }
+        else {
+            columns.push(bindRows(columns.length)); //Render rows
+        }
+        /* Render Column based input provided ends */
+        this.setState({columns: columns, inputValue: {}, editedRow: null})
     }
     render() {
-        console.log(this.state.columns.length);
+        const {
+            editedRow,
+            inputValue,
+            columns
+        } = this.state;
+        const {formFields} = this.props;
+        let tblHeader;
+        let renderForms = formFields.map((k, i) => { //Render form fields dynamically
+            let list = [];
+            if(formFields[i].showField) {
+                list.push(
+                    <li key={i}>
+                        <InputControl
+                            {...formFields[i]}
+                            handleChange={this.handleChange}
+                            value={inputValue[formFields[i].id] != undefined ? inputValue[formFields[i].id] : ""}
+                        />
+                    </li>
+                )
+            }
+            return list;
+        });
+        if(columns.length > 0) { //Render Table header dynamically
+            tblHeader = formFields.map((k,i) => {
+                let list = [];
+                if(formFields[i].showColumn){
+                    list.push(<th key={i} id={"tbl_" + formFields[i].id}>{formFields[i].placeholder}</th>)
+                }
+                return list;
+            })
+        }
         return (
             <div>
                 <ul>
+                    {renderForms}
                     <li>
-                        <InputControl 
-                            type="text"
-                            id="firstName"
-                            placeholder={"First Name"}
-                            handleChange={this.handleChange}
-                            value={this.state.inputValue.firstName != undefined ? this.state.inputValue.firstName : ""}
-                        />
-                    </li>
-                    <li>
-                        <InputControl 
-                            type="text"
-                            id="lastName"
-                            placeholder={"Last Name"}
-                            handleChange={this.handleChange}
-                            value={this.state.inputValue.lastName != undefined ? this.state.inputValue.lastName : ""}
-                        />
-                    </li>
-                    <li>
-                        <InputControl 
-                            type="text"
-                            id="email"
-                            placeholder={"Email Id"}
-                            handleChange={this.handleChange}
-                            value={this.state.inputValue.email != undefined ? this.state.inputValue.email : ""}
-                        />
-                    </li>
-                    <li>
-                        <ButtonControl value={"Add"} onClick={this.onClick} />
+                        <ButtonControl value={editedRow != null ? "Update" : "Add"} onClick={this.onClick} />
                     </li>
                 </ul>
-                {this.state.columns.length > 0 && (
+                {columns.length > 0 && (
                     <table>
                         <thead>
                             <tr>
                                 <th id="tbl_sno">{"S.No."}</th>
-                                <th id="tbl_firstName">{"First Name"}</th>
-                                <th id="tbl_lastName">{"Last Name"}</th>
-                                <th id="tbl_email">{"Email ID"}</th>
+                                {tblHeader}
                                 <th id="tbl_edit">{"Edit"}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {this.state.columns}
+                            {columns}
                         </tbody>
                     </table>
                 )}
