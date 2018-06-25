@@ -1,8 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Main from './components/main';
+import {Provider} from 'react-redux';
+import store from './store';
 
 import '../assets/css/main.scss';
+
 
 const formFields = [
     {
@@ -45,4 +48,4 @@ class App extends React.Component {
 }
 
 
-ReactDOM.render(<App />,document.getElementById('app'));
+ReactDOM.render(<Provider store={store}><App /></Provider>,document.getElementById('app'));

@@ -4,6 +4,18 @@ import PropTypes from 'prop-types';
 export default class InputControl extends React.Component {
     constructor(props) {
         super(props);
+        this.handleChange = this.handleChange.bind(this);
+        this.state = {
+            inputValue: {}
+        }
+    }
+    handleChange(event) {
+        let inputValue = {...this.state.inputValue}; 
+        inputValue[event.target.id] = event.target.value;
+        this.setState({inputValue}); //Store each input values in state
+    }
+    componentWillReceiveProps(nextProps) {
+        console.log(nextProps);
     }
     render() {
         const {
@@ -21,7 +33,7 @@ export default class InputControl extends React.Component {
                 maxLength={maxLength} 
                 value={value} 
                 placeholder={placeholder}
-                onChange={handleChange}
+                onChange={this.handleChange}
             />
         );
     }

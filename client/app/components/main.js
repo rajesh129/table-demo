@@ -1,9 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import InputControl from './inputControl';
 import ButtonControl from './buttonControl';
+import {getValue} from '../actions/inputActions';
 
-export default class Main extends React.Component {
+class Main extends React.Component {
     constructor(props) {
         super(props);
         this.handleChange = this.handleChange.bind(this);
@@ -16,9 +18,10 @@ export default class Main extends React.Component {
         }
     }
     handleChange(event) { //On change event for Input controls
-        let inputValue = {...this.state.inputValue}; 
-        inputValue[event.target.id] = event.target.value;
-        this.setState({inputValue}); //Store each input values in state
+        // let inputValue = {...this.state.inputValue}; 
+        // inputValue[event.target.id] = event.target.value;
+        // this.setState({inputValue}); //Store each input values in state
+        this.props.getValue(event.target.value);
     }
     onEdit(event) { //Event for editing row data
         let elem = document.querySelector("#" + event.target.id); 
@@ -97,7 +100,7 @@ export default class Main extends React.Component {
                         <InputControl
                             {...formFields[i]}
                             handleChange={this.handleChange}
-                            value={inputValue[formFields[i].id] != undefined ? inputValue[formFields[i].id] : ""}
+                            value={this.props.valueInput[formFields[i].id]}
                         />
                     </li>
                 )
@@ -141,3 +144,20 @@ export default class Main extends React.Component {
 }
 
 
+const mapStateToProps = (state, props) => {
+    let valueInput = {};
+    valueInput = state.valueInput;
+    return {
+        valueInput
+    }
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        getValue: (val) => {
+            dispatch(getValue(val));
+        }
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Main);
